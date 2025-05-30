@@ -1,0 +1,7 @@
+# Node modules
+node_modules/
+
+# dotenv файлы с секретами (Mongo URI, JWT и др.)
+.env
+.env.local
+.env.*.local
