@@ -11,7 +11,13 @@ const workoutPlanRoutes = require('./routes/workoutplan');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://training-app-frontend-rust.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 app.use(bodyParser.json());
 
 app.use('/api/users', userRoutes);
