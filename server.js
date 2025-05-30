@@ -19,7 +19,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/plans', workoutPlanRoutes);
 
-mongoose.connect(process.env.MONGODB_CONNECT_URI)
+// mongoose.connect(process.env.MONGODB_CONNECT_URI)
+mongoose.connect('mongodb://localhost:27017/training_app_db')
 mongoose.connection.on('connected', () => {
   console.log("DB connected");
 });

@@ -85,14 +85,69 @@ router.put('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Обновление роли пользователя (только для админа)
+router.put('/:id/role', authMiddleware, async (req, res) => {
+  try {
+    // Проверяем, что текущий пользователь — админ
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Доступ запрещён. Только для администраторов.' });
+    }
+
+    const { role } = req.body;
+    const allowedRoles = ['USER', 'COACH'];
+
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: 'Недопустимая роль' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.json({
+      message: 'Роль пользователя обновлена',
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера при обновлении роли' });
+  }
+});
 
 // Удаление пользователя (также можно ограничить)
+// Удаление пользователя (только админ может удалять)
 router.delete('/:id', authMiddleware, async (req, res) => {
-    if (req.user.id !== req.params.id) {
-        return res.status(403).json({ message: 'Доступ запрещён' });
+  try {
+    // Проверяем роль текущего пользователя
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Доступ запрещён. Только администраторы могут удалять пользователей.' });
     }
+
+    const userToDelete = await User.findById(req.params.id);
+    if (!userToDelete) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+
+    // Можно дополнительно запретить удалять самого себя (по желанию)
+    if (req.user.id === req.params.id) {
+      return res.status(400).json({ message: 'Вы не можете удалить самого себя' });
+    }
+
     await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "Пользователь удалён" });
+    res.json({ message: 'Пользователь удалён' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка сервера при удалении пользователя' });
+  }
 });
+
 
 module.exports = router;

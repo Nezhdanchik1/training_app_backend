@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const WorkoutPlan = require('../models/WorkoutPlan');
+const User = require('../models/User');
 
 // ➕ Создать план
 router.post('/', async (req, res) => {
   try {
     const plan = new WorkoutPlan(req.body);
+    console.log('Получен план:', req.body);
     await plan.save();
     res.status(201).json(plan);
   } catch (err) {
@@ -28,13 +30,35 @@ router.get('/next', async (req, res) => {
   }
 });
 
-// 📄 Получить все планы
-router.get('/', async (req, res) => {
+// Предполагаем, что WorkoutPlan имеет поле userId, связанное с User
+router.get('/public', async (req, res) => {
   try {
-    const plans = await WorkoutPlan.find().populate('days.exercises.exerciseId');
+    // Найдём пользователей-тренеров
+    const coaches = await User.find({ role: 'COACH' }).select('_id');
+    const coachIds = coaches.map(c => c._id);
+
+    console.log(coaches)
+
+    const plans = await WorkoutPlan.find({
+      userId: { $in: coachIds },
+    });
+
     res.json(plans);
   } catch (err) {
-    res.status(500).json({ error: 'Ошибка получения планов' });
+    res.status(500).json({ error: 'Ошибка при получении публичных планов' });
+  }
+});
+
+
+// 📄 Получить все планы
+router.get('/', async (req, res) => {
+  const userId = req.query.userId;
+  
+  try {
+    const plans = await WorkoutPlan.find({ userId }); // если поле userId есть
+    res.json(plans);
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка при получении планов' });
   }
 });
 
